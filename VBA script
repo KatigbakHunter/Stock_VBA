@@ -1,0 +1,106 @@
+Sub stock()
+    Dim sheet As Worksheet
+    Dim totalVolume As Double
+    Dim currentRow As Long
+    Dim yearlyChange As Double
+    Dim tickerIndex As Integer
+    Dim startRow As Long
+    Dim totalRows As Long
+    Dim percentageChange As Double
+    Dim searchValue As Long
+    Dim maxIncreaseRow As Long, maxDecreaseRow As Long, maxVolumeRow As Long
+
+    For Each sheet In ThisWorkbook.Sheets
+
+        
+        sheet.Range("I1").Value = "Ticker"
+        sheet.Range("J1").Value = "Yearly Change"
+        sheet.Range("K1").Value = "Percent Change"
+        sheet.Range("L1").Value = "Total Stock Volume"
+
+        
+        sheet.Range("P1").Value = "Ticker"
+        sheet.Range("Q1").Value = "Value"
+        sheet.Range("Q2").Value = "Greatest % Increase"
+        sheet.Range("Q3").Value = "Greatest % Decrease"
+        sheet.Range("Q4").Value = "Greatest Total Volume"
+
+        
+        totalRows = sheet.Cells(sheet.Rows.Count, "A").End(xlUp).Row
+        tickerIndex = 0
+        totalVolume = 0
+        startRow = 2
+
+        For currentRow = 2 To totalRows
+
+            
+            If sheet.Cells(currentRow + 1, 1).Value <> sheet.Cells(currentRow, 1).Value Then
+
+                totalVolume = totalVolume + sheet.Cells(currentRow, 7).Value
+
+                If sheet.Cells(startRow, 3).Value = 0 Then
+                    
+                    For searchValue = startRow To currentRow
+                        If sheet.Cells(searchValue, 3).Value <> 0 Then
+                            startRow = searchValue
+                            Exit For
+                        End If
+                    Next searchValue
+                End If
+
+                
+                yearlyChange = sheet.Cells(currentRow, 6).Value - sheet.Cells(startRow, 3).Value
+                If sheet.Cells(startRow, 3).Value <> 0 Then
+                    percentageChange = yearlyChange / sheet.Cells(startRow, 3).Value
+                Else
+                    percentageChange = 0
+                End If
+
+                
+                sheet.Range("I" & 2 + tickerIndex).Value = sheet.Cells(currentRow, 1).Value
+                sheet.Range("J" & 2 + tickerIndex).Value = yearlyChange
+                sheet.Range("J" & 2 + tickerIndex).NumberFormat = "0.00"
+                sheet.Range("K" & 2 + tickerIndex).Value = percentageChange
+                sheet.Range("K" & 2 + tickerIndex).NumberFormat = "0.00%"
+                sheet.Range("L" & 2 + tickerIndex).Value = totalVolume
+
+                
+                Select Case yearlyChange
+                    Case Is > 0
+                        sheet.Range("J" & 2 + tickerIndex).Interior.ColorIndex = 4 ' Green for positive change
+                    Case Is < 0
+                        sheet.Range("J" & 2 + tickerIndex).Interior.ColorIndex = 3 ' Red for negative change
+                    Case Else
+                        sheet.Range("J" & 2 + tickerIndex).Interior.ColorIndex = 0 ' No color for zero change
+                End Select
+
+                
+                totalVolume = 0
+                tickerIndex = tickerIndex + 1
+                startRow = currentRow + 1
+
+            Else
+                totalVolume = totalVolume + sheet.Cells(currentRow, 7).Value
+            End If
+
+        Next currentRow
+
+        
+        sheet.Range("Q2").Value = "%" & WorksheetFunction.Max(sheet.Range("K2:K" & tickerIndex + 1)) * 100
+        sheet.Range("Q3").Value = "%" & WorksheetFunction.Min(sheet.Range("K2:K" & tickerIndex + 1)) * 100
+        sheet.Range("Q4").Value = WorksheetFunction.Max(sheet.Range("L2:L" & tickerIndex + 1))
+
+        
+        maxIncreaseRow = WorksheetFunction.Match(WorksheetFunction.Max(sheet.Range("K2:K" & tickerIndex + 1)), sheet.Range("K2:K" & tickerIndex + 1), 0)
+        maxDecreaseRow = WorksheetFunction.Match(WorksheetFunction.Min(sheet.Range("K2:K" & tickerIndex + 1)), sheet.Range("K2:K" & tickerIndex + 1), 0)
+        maxVolumeRow = WorksheetFunction.Match(WorksheetFunction.Max(sheet.Range("L2:L" & tickerIndex + 1)), sheet.Range("L2:L" & tickerIndex + 1), 0)
+
+        
+        sheet.Range("P2").Value = sheet.Cells(maxIncreaseRow + 1, 9).Value
+        sheet.Range("P3").Value = sheet.Cells(maxDecreaseRow + 1, 9).Value
+        sheet.Range("P4").Value = sheet.Cells(maxVolumeRow + 1, 9).Value
+
+    Next sheet
+
+    MsgBox "Stock Data Analysis Complete!", vbInformation
+End Sub
